@@ -1,4 +1,3 @@
-
 import json
 from os.path import commonpath
 import speech_recognition as sr
@@ -28,28 +27,31 @@ def speak(audio):
 
 
 def name():
-    r = sr.Recognizer()
-    with sr.Microphone() as main:
-        engine.say("What's your name?")
-        engine.runAndWait()
-        r.pause_threshold = 0.5
-        r.adjust_for_ambient_noise(main, duration=0)
-        print("Please, Say your name...")
-        audio = r.listen(main)
-        saying_name = r.recognize_google(audio).lower()
-        print(saying_name)
+    try:
+        r = sr.Recognizer()
+        with sr.Microphone() as main:
+            engine.say("What's your name?")
+            engine.runAndWait()
+            r.pause_threshold = 0.5
+            r.adjust_for_ambient_noise(main, duration=0)
+            print("Please, Say your name...")
+            audio = r.listen(main, timeout=5.0)
+            saying_name = r.recognize_google(audio).lower()
+            print(saying_name)
 
-        if "" in saying_name:
-            filtering = saying_name.replace("my name is", "")
-            intro = f"Hey {filtering}, Alexa is here\n "
-            hour = int(datetime.datetime.now().hour)
-            if hour >= 0 and hour < 12:
-                speak(intro + "Good Morning")
-            elif hour >= 12 and hour < 18:
-                speak(intro + "Good Afternoon")
-            else:
-                speak(intro + "Good Evening")
+            if "" in saying_name:
+                filtering = saying_name.replace("my name is", "")
+                intro = f"Hey {filtering}, Alexa is here\n "
+                hour = int(datetime.datetime.now().hour)
+                if hour >= 0 and hour < 12:
+                    speak(intro + "Good Morning")
+                elif hour >= 12 and hour < 18:
+                    speak(intro + "Good Afternoon")
+                else:
+                    speak(intro + "Good Evening")
 
+    except:
+        pass
 
 name()
 
@@ -84,9 +86,10 @@ class Alexa:
         except sr.WaitTimeoutError:
             pass
         except sr.UnknownValueError:
-            raise Exception("it's a temporary error, Try Again")
+            pass
         except sr.RequestError:
             print("Slow internet Connection")
+
 
     def talk(self, text):
         engine.say(text)
@@ -101,6 +104,7 @@ class Alexa:
             pywhatkit.playonyt(song)
 
         if "time" in command:
+            print(command)
             time = datetime.datetime.now().strftime('%H:%M')
             com = "Right now it's "
             print(com + time)
@@ -108,11 +112,14 @@ class Alexa:
 
         if "search" in command:
             print(command)
-            rep = "According to wikipedia, "
-            info = command.replace("alexa search", "")
-            search = wikipedia.summary(info, 1)
-            print(rep + search)
-            alexa.talk(rep + search)
+            try:
+                rep = "According to wikipedia, "
+                info = command.replace("alexa search", "")
+                search = wikipedia.summary(info, 1)
+                print(rep + search)
+                alexa.talk(rep + search)
+            except wikipedia.exceptions.PageError:
+                raise Exception("Sorry, Wikipedia couldn't fetch your information")
 
         if "joke" in command:
             print(command)
@@ -143,6 +150,7 @@ class Alexa:
             os.system(maps_args)
 
         if "activity" in command:
+            print(command)
             response = requests.get("https://www.boredapi.com/api/activity")
             data = json.loads(response.content)
             activity = data["activity"]
@@ -167,6 +175,7 @@ class Alexa:
             alexa.talk(age)
 
         if "quote of the day" in command:
+            print(command)
             response = requests.get("https://zenquotes.io/api/random")
             data = json.loads(response.content)
             qu = data[0]["q"]
@@ -175,6 +184,7 @@ class Alexa:
             alexa.talk(f"{qu}, quote by {by}")
 
     def how(self, command):
+        print(command)
         ask = ["how are you", "how you doing",
                "what's up", "how are you doing"]
         if random.choice(ask) in command:
