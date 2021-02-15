@@ -12,10 +12,10 @@ import json
 import re
 import os
 import smtplib
+import spotipy
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from  recommender.api import Recommender, _ClientCredentialsFlow
-import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 
@@ -97,14 +97,6 @@ class Alexa:
     def talk(self, text):
         engine.say(text)
         engine.runAndWait()
-
-    def mail(to, msg):
-        server = smtplib.SMTP("smpt.gmail.com", 587)
-        server.echo()
-        server.starttls()
-        server.login("your@email.com", "password")
-        server.sendmail("your@email.com", to, msg)
-        server.close()
          
 
     def run_alexa(self, command):
@@ -210,16 +202,23 @@ class Alexa:
             print(f"{qu}, quote by {by}")
             alexa.talk(f"{qu}, quote by {by}")
         
-                
-        elif "mail" in command:
-            try:
-                alexa.talk("Whats the mail?")
-                msg = command
-                to = "denmarkz922@gmail.com"
-                mail(to, msg)
-            except Exception as ex:
-                print(ex)
-                alexa.talk("Sorry, unable to proceed ")
+        def mail(to, msg):
+            server = smtplib.SMTP("smpt.gmail.com", 587)
+            server.echo()
+            server.starttls()
+            server.login("your@email.com", "password")
+            server.sendmail("your@email.com", to, msg)
+            server.close()
+
+            if "mail" in command:
+                try:
+                    alexa.talk("Whats the mail?")
+                    msg = command
+                    to = "denmarkz922@gmail.com"
+                    mail(to, msg)
+                except Exception as ex:
+                    print(ex)
+                    alexa.talk("Sorry, unable to proceed ")
 
 
 
