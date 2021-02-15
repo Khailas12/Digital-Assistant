@@ -1,4 +1,3 @@
-import json
 from os.path import commonpath
 import speech_recognition as sr
 import pyttsx3
@@ -12,8 +11,12 @@ import requests
 import json
 import re
 import os
+import smtplib
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from  recommender.api import Recommender, _ClientCredentialsFlow
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 
 engine = pyttsx3.init()
@@ -36,7 +39,7 @@ def name():
             r.adjust_for_ambient_noise(main, duration=0)
             print("Please, Say your name...")
             audio = r.listen(main, timeout=5.0)
-            saying_name = r.recognize_google(audio).lower()
+            saying_name = r.recognize_google(audio, language='en-in').lower()
             print(saying_name)
 
             if "" in saying_name:
@@ -95,6 +98,15 @@ class Alexa:
         engine.say(text)
         engine.runAndWait()
 
+    def mail(to, msg):
+        server = smtplib.SMTP("smpt.gmail.com", 587)
+        server.echo()
+        server.starttls()
+        server.login("your@email.com", "password")
+        server.sendmail("your@email.com", to, msg)
+        server.close()
+         
+
     def run_alexa(self, command):
         if "play" in command:
             print(command)
@@ -103,14 +115,14 @@ class Alexa:
             alexa.talk("playing" + song)
             pywhatkit.playonyt(song)
 
-        if "time" in command:
+        elif "time" in command:
             print(command)
             time = datetime.datetime.now().strftime('%H:%M')
-            com = "Right now it's "
+            com = "The time is"
             print(com + time)
             alexa.talk(com + time)
 
-        if "search" in command:
+        elif "search" in command:
             print(command)
             try:
                 rep = "According to wikipedia, "
@@ -121,35 +133,50 @@ class Alexa:
             except wikipedia.exceptions.PageError:
                 raise Exception("Sorry, Wikipedia couldn't fetch your information")
 
-        if "joke" in command:
+        elif "recommend" in command:
+            print(command)
+            songs = ["rock", "pop", "metalcore", "song", "chill", "dj", "hip-hop", "r&b"]
+            sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id= "ed147dfb315f4ab3a0dbbd0607667f68", client_secret="a1897520673842f99d8261a9d69e604e"))
+            results = sp.search(q=random.choice(songs), limit=1)
+            for idx, track in enumerate(results['tracks']['items']):
+                saying = (track["name"], "by",  track["artists"][0]["name"])
+                print(saying)
+                alexa.talk(saying)
+
+
+        elif "joke" in command:
             print(command)
             joke = pyjokes.get_joke()
             print(joke)
             alexa.talk(joke)
 
-        if "open google" in command:
-            reg_ex = re.search("open google (.*)", command)
-            search_for = command.split("google", 1)[1]
-            url = "https://www.google.com"
-            if reg_ex:
-                google = reg_ex.group(1)
-                url = url + "/" + google
-            webbrowser.open(url)
+        elif "web search" in command:
+            print(command)
+            search_for = command.split("alexa web search", 1)[1]
+            url = "https://duckduckgo.com/"
+            urll = url + "/" + search_for
+            webbrowser.open(urll)
             alexa.talk("Done")
-            # driver = webdriver.Firefox(executable_path='/pqth/to/geckodriver')
-            # driver.get("https://www.google.com")
-            # search = driver.find_element_by_id('q')
-            # search.send_keys(str(search_for))
-            # search.send_keys(Keys.RETURN)
 
-        if "where is" in command:
+        elif "music" in command:
+            music_dir = ""
+            songs = os.listdir(music_dir)
+            print(songs)
+            os.startfile(os.path.join(music_dir, songs[0]))
+            
+        elif "chrome" in command:
+            path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+            alexa.talk("opening Google Chrome...")
+            os.startfile(path)
+
+        elif "where is" in command:
             cut = command.split()
             location_url = f"https://www.google.com/maps/plcace/{cut[2]}"
             response = alexa.talk("Holf on pal\n I'm searching it")
             maps_args = webbrowser.open(location_url)
             os.system(maps_args)
 
-        if "activity" in command:
+        elif "activity" in command:
             print(command)
             response = requests.get("https://www.boredapi.com/api/activity")
             data = json.loads(response.content)
@@ -159,14 +186,14 @@ class Alexa:
             print(ac)
             alexa.talk(ac)
 
-        if "weather" in command:
+        elif "weather" in command:
             response = requests.get(
                 "http://www.7timer.info/bin/api.pl?lon=113.17&lat=23.09&product=astro&output=json")
             dt = json.loads(response.content)
             print(dt)
             alexa.talk(dt)
 
-        if "age" in command:
+        elif "age" in command:
             c = "age"
             response = requests.get(f"https://api.agify.io?name={c}")
             data = json.loads(response.content)
@@ -174,7 +201,7 @@ class Alexa:
             print(age)
             alexa.talk(age)
 
-        if "quote of the day" in command:
+        elif "quote of the day" in command:
             print(command)
             response = requests.get("https://zenquotes.io/api/random")
             data = json.loads(response.content)
@@ -182,6 +209,20 @@ class Alexa:
             by = data[0]["a"]
             print(f"{qu}, quote by {by}")
             alexa.talk(f"{qu}, quote by {by}")
+        
+                
+        elif "mail" in command:
+            try:
+                alexa.talk("Whats the mail?")
+                msg = command
+                to = "denmarkz922@gmail.com"
+                mail(to, msg)
+            except Exception as ex:
+                print(ex)
+                alexa.talk("Sorry, unable to proceed ")
+
+
+
 
     def how(self, command):
         print(command)
@@ -193,8 +234,8 @@ class Alexa:
             print(gr)
             alexa.talk(gr)
 
+if __name__ == "__main__":
+    alexa = Alexa()
 
-alexa = Alexa()
-
-while True:
-    command = alexa.take_command(listener, microphone)
+    while True:
+        command = alexa.take_command(listener, microphone)
