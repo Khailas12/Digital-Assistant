@@ -221,8 +221,6 @@ class Alexa:
                     alexa.talk("Sorry, unable to proceed ")
 
 
-
-
     def how(self, command):
         print(command)
         ask = ["how are you", "how you doing",
